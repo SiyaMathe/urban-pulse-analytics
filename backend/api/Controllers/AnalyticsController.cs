@@ -9,12 +9,17 @@ namespace UrbanPulse.Api.Controllers
     public class AnalyticsController : ControllerBase
     {
         private readonly string _connectionString;
+        private readonly ILogger<AnalyticsController> _logger;
 
-        public AnalyticsController(IConfiguration configuration)
+        public AnalyticsController(IConfiguration configuration, ILogger<AnalyticsController> logger)
         {
-            _connectionString = configuration.GetConnectionString("AzureSql") 
-                ?? Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTION_STRING") 
-                ?? "";
+            _logger = logger;
+            _connectionString = configuration.GetConnectionString("AzureSql") ?? "";
+
+            if (string.IsNullOrEmpty(_connectionString))
+            {
+                _logger.LogError("CRITICAL: 'AzureSql' connection string key was NOT found!");
+            }
         }
 
         [HttpGet("performance")]
@@ -29,8 +34,23 @@ namespace UrbanPulse.Api.Controllers
 
             using (var connection = new SqlConnection(_connectionString))
             {
-                // Reading directly from your view
-                string query = "SELECT TOP 100 * FROM dbo.vw_DetailedSensorPerformance ORDER BY ReadingHour DESC;";
+                string query = @"
+                    SELECT TOP 100 
+                        st.TypeCode   AS SensorCode, 
+                        st.TypeCode   AS SensorMetricType, 
+                        c.CityName    AS CityName, 
+                        co.CountryName AS Country, 
+                        v.HourBucket  AS ReadingHour, 
+                        v.HourlyAvg   AS AvgHourlyValue, 
+                        v.HourlyMax   AS MaxHourlyPeak, 
+                        v.ReadingCount AS TotalIngestedPackets, 
+                        v.AnomalyCount AS TotalTriggeredAnomalies, 
+                        st.Unit       AS MeasurementUnit
+                    FROM dbo.vw_HourlyTrendWithRollingAvg v
+                    JOIN dbo.City c ON c.CityName = v.CityName
+                    JOIN dbo.Country co ON co.CountryID = c.CountryID
+                    JOIN dbo.SensorType st ON st.TypeCode = v.SensorType
+                    ORDER BY v.HourBucket DESC;";
                 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -63,7 +83,6 @@ namespace UrbanPulse.Api.Controllers
                     }
                 }
             }
-
             return Ok(performanceRecords);
         }
     }

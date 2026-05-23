@@ -2,7 +2,7 @@
 -- Urban Pulse Analytics — Seed Data
 -- =============================================================================
 
-USE UrbanPulseAnalytics;
+USE UrbanPulseDB;
 GO
 
 -- Countries

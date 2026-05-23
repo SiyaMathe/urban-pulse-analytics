@@ -15,18 +15,21 @@
 USE master;
 GO
 
-IF DB_ID('UrbanPulseAnalytics') IS NOT NULL
+-- Safe drop pattern for LocalDB environments
+IF DB_ID('UrbanPulseDB') IS NOT NULL
 BEGIN
-    ALTER DATABASE UrbanPulseAnalytics SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE UrbanPulseAnalytics;
+    EXEC('ALTER DATABASE UrbanPulseDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE');
+    EXEC('DROP DATABASE UrbanPulseDB');
 END
 GO
 
-CREATE DATABASE UrbanPulseAnalytics
+CREATE DATABASE UrbanPulseDB
     COLLATE SQL_Latin1_General_CP1_CI_AS;
 GO
 
-USE UrbanPulseAnalytics;
+USE UrbanPulseDB;
+GO
+USE UrbanPulseDB;
 GO
 
 -- =============================================================================

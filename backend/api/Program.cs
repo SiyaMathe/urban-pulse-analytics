@@ -2,7 +2,15 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1. Add CORS services
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowLocalhost", policy => {
+        policy.WithOrigins("http://localhost:5173") // Your Vite frontend
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -10,14 +18,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Urban Pulse Analytics REST API", Version = "v1" });
 });
 
-// Configure Database Connection String
-string? connectionString = builder.Configuration.GetConnectionString("AzureSql") 
-    ?? Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTION_STRING");
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-// This enables Swagger in Development mode or if explicitly requested via environment variables
 if (app.Environment.IsDevelopment() || Environment.GetEnvironmentVariable("SwaggerUI") == "true")
 {
     app.UseSwagger();
@@ -25,6 +27,10 @@ if (app.Environment.IsDevelopment() || Environment.GetEnvironmentVariable("Swagg
 }
 
 app.UseHttpsRedirection();
+
+// 2. Enable CORS middleware (MUST be placed before MapControllers)
+app.UseCors("AllowLocalhost");
+
 app.UseAuthorization();
 app.MapControllers();
 
