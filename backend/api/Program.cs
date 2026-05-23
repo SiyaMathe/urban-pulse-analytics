@@ -10,14 +10,15 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Urban Pulse Analytics REST API", Version = "v1" });
 });
 
-// Register your Database connection configuration mapping
+// Configure Database Connection String
 string? connectionString = builder.Configuration.GetConnectionString("AzureSql") 
     ?? Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTION_STRING");
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment() || app.IsEnabled("SwaggerUI"))
+// This enables Swagger in Development mode or if explicitly requested via environment variables
+if (app.Environment.IsDevelopment() || Environment.GetEnvironmentVariable("SwaggerUI") == "true")
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -28,12 +29,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// Helper extension method to check configuration flags
-public static class EnvExtensions
-{
-    public static bool IsEnabled(this IWebHostEnvironment env, string key)
-    {
-        return string.Equals(Environment.GetEnvironmentVariable(key), "true", StringComparison.OrdinalIgnoreCase);
-    }
-}
