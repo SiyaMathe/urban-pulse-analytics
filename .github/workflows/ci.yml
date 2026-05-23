@@ -1,0 +1,167 @@
+name: CI — Build & Test
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 1: Validate SQL scripts (syntax check via sqlfluff)
+  # ─────────────────────────────────────────────────────────────────────────
+  sql-lint:
+    name: SQL Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff
+
+      - name: Lint SQL scripts
+        run: |
+          sqlfluff lint backend/sql/ \
+            --dialect tsql \
+            --exclude-rules LT12,LT09
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: Build & Test .NET Functions
+  # ─────────────────────────────────────────────────────────────────────────
+  build-functions:
+    name: Build Azure Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore backend/functions/UrbanPulse.Functions.csproj
+
+      - name: Build
+        run: |
+          dotnet build backend/functions/UrbanPulse.Functions.csproj \
+            --configuration Release \
+            --no-restore
+
+      - name: Run unit tests
+        run: |
+          dotnet test tests/functions.tests/ \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --logger "trx;LogFileName=test-results.trx" \
+            --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: functions-test-results
+          path: "**/*.trx"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 3: Build & Test REST API
+  # ─────────────────────────────────────────────────────────────────────────
+  build-api:
+    name: Build REST API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore backend/api/UrbanPulse.Api.csproj
+
+      - name: Build
+        run: |
+          dotnet build backend/api/UrbanPulse.Api.csproj \
+            --configuration Release \
+            --no-restore
+
+      - name: Run API tests
+        run: |
+          dotnet test tests/api.tests/ \
+            --configuration Release \
+            --no-build \
+            --verbosity normal
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 4: Build React Dashboard
+  # ─────────────────────────────────────────────────────────────────────────
+  build-frontend:
+    name: Build Dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 5: Security scan (dependency vulnerabilities)
+  # ─────────────────────────────────────────────────────────────────────────
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Check for vulnerable NuGet packages
+        run: |
+          dotnet list backend/api/UrbanPulse.Api.csproj package --vulnerable --include-transitive
+          dotnet list backend/functions/UrbanPulse.Functions.csproj package --vulnerable --include-transitive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: npm audit
+        run: npm audit --audit-level=high
+        working-directory: frontend
+        continue-on-error: true  # Don't fail CI for audit warnings in dev

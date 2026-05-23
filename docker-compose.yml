@@ -1,0 +1,62 @@
+version: '3.9'
+
+services:
+  # SQL Server (mirrors Azure SQL Database)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: urbanpulse-sql
+    environment:
+      SA_PASSWORD: "YourPassword123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+      - ./backend/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourPassword123!" -Q "SELECT 1" -b
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Azurite — local Azure Storage emulator (queues + blobs)
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: urbanpulse-azurite
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --loose"
+    ports:
+      - "10000:10000"   # Blob
+      - "10001:10001"   # Queue
+      - "10002:10002"   # Table
+    volumes:
+      - azurite-data:/data
+
+  # DB schema initialiser (runs migrations then exits)
+  db-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    container_name: urbanpulse-db-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./backend/sql:/sql
+    command: >
+      bash -c "
+        echo 'Running schema migrations...' &&
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -i /sql/01_schema.sql -b &&
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -i /sql/02_stored_procedures.sql -b &&
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -i /sql/03_views.sql -b &&
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -i /sql/04_seed_data.sql -b &&
+        echo 'Database initialised successfully.'
+      "
+    restart: "no"
+
+volumes:
+  sqlserver-data:
+  azurite-data:
+
+networks:
+  default:
+    name: urbanpulse-local

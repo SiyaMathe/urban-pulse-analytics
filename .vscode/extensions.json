@@ -1,0 +1,22 @@
+{
+  "recommendations": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "ms-azuretools.vscode-azurefunctions",
+    "ms-azuretools.vscode-azureappservice",
+    "ms-azuretools.vscode-azureresourcegroups",
+    "ms-azuretools.vscode-bicep",
+    "ms-mssql.mssql",
+    "ms-azuretools.vscode-azurestorage",
+    "github.vscode-github-actions",
+    "github.copilot",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    "eamodio.gitlens",
+    "streetsidesoftware.code-spell-checker",
+    "redhat.vscode-yaml",
+    "ms-vscode-remote.remote-containers"
+  ]
+}

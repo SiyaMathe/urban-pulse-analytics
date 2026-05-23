@@ -1,0 +1,72 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🔵 Debug Azure Functions",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "func: host start",
+      "program": "${env:USERPROFILE}/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle/4.*/bin/func.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/functions",
+      "stopAtEntry": false,
+      "launchBrowser": {
+        "enabled": false
+      },
+      "env": {
+        "AZURE_FUNCTIONS_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "🟢 Debug REST API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-api",
+      "program": "${workspaceFolder}/backend/api/bin/Debug/net8.0/UrbanPulse.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/api",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:7001;http://localhost:5001"
+      }
+    },
+    {
+      "name": "🟡 Debug Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src"
+    },
+    {
+      "name": "🔴 Run All Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-all",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/tests",
+        "--verbosity", "normal"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🚀 Full Stack (API + Functions)",
+      "configurations": [
+        "🔵 Debug Azure Functions",
+        "🟢 Debug REST API"
+      ],
+      "stopAll": true
+    }
+  ]
+}

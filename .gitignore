@@ -1,0 +1,36 @@
+# Environment & secrets
+.env
+*.env.local
+*.env.production
+
+# .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.coverage
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+*.log
+npm-debug.log*
+
+# Azure Functions local settings (contains secrets)
+backend/functions/local.settings.json
+
+# VS Code (keep extensions.json and launch.json)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Docker volumes
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
