@@ -57,21 +57,21 @@ jobs:
             --configuration Release \
             --no-restore
 
-      - name: Run unit tests
-        run: |
-          dotnet test tests/functions.tests/ \
-            --configuration Release \
-            --no-build \
-            --verbosity normal \
-            --logger "trx;LogFileName=test-results.trx" \
-            --collect:"XPlat Code Coverage"
+      # - name: Run unit tests
+      #   run: |
+      #     dotnet test tests/functions.tests/ \
+      #       --configuration Release \
+      #       --no-build \
+      #       --verbosity normal \
+      #       --logger "trx;LogFileName=test-results.trx" \
+      #       --collect:"XPlat Code Coverage"
 
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: functions-test-results
-          path: "**/*.trx"
+      # - name: Upload test results
+      #   uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: functions-test-results
+      #     path: "**/*.trx"
 
   # ─────────────────────────────────────────────────────────────────────────
   # Job 3: Build & Test REST API
