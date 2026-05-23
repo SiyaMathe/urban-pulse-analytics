@@ -23,12 +23,6 @@ public class HttpQueryFunction
     private readonly ILogger<HttpQueryFunction> _logger;
     private readonly string _connectionString;
 
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
-    };
-
     public HttpQueryFunction(ILogger<HttpQueryFunction> logger)
     {
         _logger = logger;
@@ -54,7 +48,7 @@ public class HttpQueryFunction
                 database = dbHealthy ? "ok" : "error",
                 functions = "ok"
             }
-        }, JsonOpts);
+        });
 
         return response;
     }
@@ -108,7 +102,7 @@ public class HttpQueryFunction
             });
         }
 
-        await response.WriteAsJsonAsync(new { data = results, count = results.Count }, JsonOpts);
+        await response.WriteAsJsonAsync(new { data = results, count = results.Count });
         return response;
     }
 
@@ -142,7 +136,7 @@ public class HttpQueryFunction
                     ORDER BY ans.SnapshotHour
                 ) AS HoH_Change
             FROM       dbo.AnalyticsSnapshot ans
-            JOIN       dbo.SensorType        st  ON st.SensorTypeID = ans.SensorTypeID
+            JOIN       dbo.SensorType         st  ON st.SensorTypeID = ans.SensorTypeID
             WHERE      ans.CityID       = @CityId
               AND      ans.SnapshotHour >= DATEADD(HOUR, -@Hours, SYSUTCDATETIME())
             ORDER BY   ans.SnapshotHour DESC, st.TypeCode";
@@ -175,7 +169,7 @@ public class HttpQueryFunction
             periodHours = hours,
             snapshots,
             snapshotCount = snapshots.Count
-        }, JsonOpts);
+        });
 
         return response;
     }
@@ -224,7 +218,7 @@ public class HttpQueryFunction
             successCount  = success,
             failureCount  = failure,
             processedAt   = DateTimeOffset.UtcNow
-        }, JsonOpts);
+        });
 
         return response;
     }
