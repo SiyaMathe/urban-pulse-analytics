@@ -1,7 +1,6 @@
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Azure.Messaging.EventHubs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
@@ -55,7 +54,7 @@ public class QueueIngestFunction
         catch (JsonException ex)
         {
             _logger.LogError(ex, "Failed to deserialize message: {Body}", messageBody);
-            throw; // Re-throw so Azure retries / dead-letters
+            throw; // Re-throw so Azure retries / dead-letters automatically
         }
 
         await IngestReadingAsync(message, messageBody);
@@ -75,7 +74,7 @@ public class QueueIngestFunction
             CommandTimeout = 30
         };
 
-        cmd.Parameters.AddWithValue("@SensorCode",  message.SensorCode);
+        cmd.Parameters.AddWithValue("@SensorCode",   message.SensorCode);
         cmd.Parameters.AddWithValue("@ReadingValue", message.Value);
         cmd.Parameters.AddWithValue("@RawPayload",   rawPayload);
 
